@@ -179,69 +179,14 @@ const calculateHandler = (req: Request, res: Response) => {
 
 // POST /api/calculate - Расчет стоимости доставки (POST)
 router.post('/calculate', apiProtection, calculateHandler)
-
 // GET /api/calculate - Расчет стоимости доставки (GET)
 router.get('/calculate', apiProtection, calculateHandler)
-
 // GET /api/test - Тестовый метод для проверки доступности API
 router.get('/test', apiProtection, (req: Request, res: Response) => {
     res.json({
         status: 'ok',
         message: 'API доступен и защищен',
         timestamp: new Date().toISOString(),
-    })
-})
-
-// GET /api/docs - Документация по API
-router.get('/docs', (req: Request, res: Response) => {
-    res.json({
-        api_version: '1.0.0',
-        description: 'API сервиса калькуляции доставки',
-        authentication: {
-            methods: ['Basic Auth', 'API Key'],
-            api_key_header: 'x-api-key',
-            basic_auth: 'Используйте HTTP Basic Authentication',
-        },
-        endpoints: [
-            {
-                path: '/api/calculate',
-                methods: ['GET', 'POST'],
-                description: 'Расчет стоимости доставки',
-                authentication: 'Требуется',
-                request_format: {
-                    coordinates: {
-                        lat: 'Широта адреса доставки (число от -90 до 90)',
-                        lon: 'Долгота адреса доставки (число от -180 до 180)',
-                    },
-                    order: {
-                        weight: 'Вес заказа в кг (положительное число)',
-                        cost: 'Стоимость заказа в рублях (неотрицательное число)',
-                        items: 'Количество товаров (опционально)',
-                    },
-                },
-                response_format: {
-                    delivery_cost: 'Стоимость доставки в рублях',
-                    delivery_time: 'Примерное время доставки',
-                    options: 'Дополнительные варианты доставки (опционально)',
-                },
-                examples: {
-                    post: 'POST /api/calculate с JSON в теле запроса',
-                    get: 'GET /api/calculate?data={"coordinates":{"lat":48.5,"lon":135.2},"order":{"weight":5.5,"cost":3500,"items":2}}',
-                },
-            },
-            {
-                path: '/api/test',
-                methods: ['GET'],
-                description: 'Проверка доступности API',
-                authentication: 'Требуется',
-            },
-            {
-                path: '/api/docs',
-                methods: ['GET'],
-                description: 'Документация по API',
-                authentication: 'Не требуется',
-            },
-        ],
     })
 })
 
