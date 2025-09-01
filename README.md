@@ -1,126 +1,124 @@
-# API сервис калькуляции доставки
+# Delivery Calculation API Service
 
-Простой и эффективный API-сервис для расчета стоимости доставки на основе координат адреса и параметров заказа.
+A simple and efficient API service for calculating delivery costs based on address coordinates and order parameters.
 
-## Функциональность
+## Features
 
--   Расчет стоимости доставки на основе координат адреса
--   Учет веса и стоимости заказа
--   Различные варианты доставки в зависимости от расстояния
--   Простой REST API для интеграции с CS-Cart
--   Защита API с помощью ключей доступа
+-   Delivery cost calculation based on address coordinates
+-   Consideration of order weight and cost
+-   Various delivery options depending on distance
+-   Simple REST API for integration with CS-Cart
+-   API protection using access keys
 
-## Технологии
+## Technologies
 
 -   TypeScript
 -   Express.js
 -   Docker
--   Traefik (для проксирования и SSL)
+-   Traefik (for proxying and SSL)
 
-## Структура проекта
+## Project Structure
 
 ```
-delivery-uroven/
+delivery-express-api/
 ├── src/
-│   ├── models/         # Типы данных
-│   ├── routes/         # API маршруты
-│   ├── services/       # Бизнес-логика
-│   └── index.ts        # Точка входа
-├── .env                # Переменные окружения
-├── docker-compose.yml  # Конфигурация Docker Compose
-├── Dockerfile          # Конфигурация для создания Docker образа
-├── package.json        # Зависимости NPM
-└── tsconfig.json       # Конфигурация TypeScript
+│   ├── models/         # Data types
+│   ├── routes/         # API routes
+│   ├── services/       # Business logic
+│   └── index.ts        # Entry point
+├── .env                # Environment variables
+├── package.json        # NPM dependencies
+└── tsconfig.json       # TypeScript configuration
 ```
 
-## Особенности проекта
+## Project Features
 
-### Алиасы путей импорта
+### Import Path Aliases
 
-В проекте настроены алиасы путей для импорта, что делает код более читаемым:
+The project has configured path aliases for imports, making the code more readable:
 
 ```typescript
-// Вместо относительных путей
+// Instead of relative paths
 import { DeliveryCalculationRequest } from '../models/deliveryData'
 
-// Используем алиасы
+// Using aliases
 import { DeliveryCalculationRequest } from '@models/deliveryData'
 ```
 
-Доступные алиасы:
+Available aliases:
 
--   `@/*` - доступ к любому файлу из директории src
--   `@models/*` - доступ к моделям данных
--   `@services/*` - доступ к сервисам
--   `@routes/*` - доступ к маршрутам API
+-   `@/*` - access to any file from the src directory
+-   `@models/*` - access to data models
+-   `@services/*` - access to services
+-   `@routes/*` - access to API routes
 
-## Локальная разработка
+## Local Development
 
-1. Клонировать репозиторий:
+1. Clone the repository:
 
     ```
-    git clone https://gitlab.com/uroven-gitlab-group/delivery-uroven.git
-    cd delivery-uroven
+    git clone https://github.com/Father1993/delivery-express-api.git
+    cd delivery-express-api
     ```
 
-2. Установить зависимости:
+2. Install dependencies:
 
     ```
     npm install
     ```
 
-3. Запустить в режиме разработки:
+3. Run in development mode:
 
     ```
     npm run dev
     ```
 
-4. API будет доступно по адресу: http://localhost:3000
+4. API will be available at: http://localhost:3000
 
-## API эндпоинты
+## API Endpoints
 
-### Авторизация API
+### API Authorization
 
-Все запросы к API должны включать заголовок `x-api-key` с действительным ключом API.
+All API requests must include the `x-api-key` header with a valid API key.
 
 ```
 x-api-key: cs-cart-delivery
 ```
 
-Для тестирования можно использовать ключ `test-api-key`.
+For testing, you can use the key `test-api-key`.
 
 ### GET /api/test
 
-Проверка доступности API и корректности авторизации.
+Check API availability and correct authorization.
 
-**Заголовки:**
+**Headers:**
 
 ```
 x-api-key: cs-cart-delivery
 ```
 
-**Ответ:**
+**Response:**
 
 ```json
 {
     "status": "ok",
-    "message": "API доступен и защищен",
+    "message": "API is available and protected",
     "timestamp": "2023-11-15T10:30:15.123Z"
 }
 ```
 
 ### POST /api/calculate
 
-Расчет стоимости доставки.
+Calculate delivery cost.
 
-**Заголовки:**
+**Headers:**
 
 ```
 Content-Type: application/json
 x-api-key: cs-cart-delivery
 ```
 
-**Запрос:**
+**Request:**
 
 ```json
 {
@@ -136,64 +134,42 @@ x-api-key: cs-cart-delivery
 }
 ```
 
-**Ответ:**
+**Response:**
 
 ```json
 {
     "delivery_cost": 305,
-    "delivery_time": "2-3 дня",
+    "delivery_time": "2-3 days",
     "options": [
         {
-            "name": "Экспресс доставка",
+            "name": "Express delivery",
             "cost": 458,
-            "description": "Доставка в течение 3-5 часов"
+            "description": "Delivery within 3-5 hours"
         }
     ]
 }
 ```
 
-## Развертывание на VPS
+### Deployment Steps
 
-### Предварительные требования
-
--   Docker и Docker Compose
--   Настроенный Traefik с внешней сетью traefik-public
--   Доменное имя, указывающее на ваш сервер (delivery.uroven.pro)
-
-### Шаги деплоя
-
-1. Клонировать репозиторий на сервер:
+1. Clone the repository to the server:
 
     ```
-    git clone https://gitlab.com/uroven-gitlab-group/delivery-uroven.git
-    cd delivery-uroven
+    git clone https://github.com/Father1993/delivery-express-api.git
+    cd delivery-express-api
     ```
 
-2. Настроить переменные окружения в файле .env (при необходимости)
+2. Configure environment variables in the .env file (if necessary)
 
-3. Запустить сервис с помощью Docker Compose:
+## Integration with CS-Cart
 
-    ```
-    docker-compose up -d
-    ```
-
-4. Проверить логи:
-
-    ```
-    docker-compose logs -f
-    ```
-
-5. API будет доступно по адресу: https://delivery.uroven.pro
-
-## Интеграция с CS-Cart
-
-После проверки адреса на вхождение в зону доставки (через Supabase), CS-Cart может отправить запрос на расчет стоимости доставки:
+After checking if the address is within the delivery zone (via Supabase), CS-Cart can send a request to calculate the delivery cost:
 
 ```javascript
-// Пример кода для интеграции с CS-Cart
-const API_KEY = 'cs-cart-delivery' // API ключ для авторизации
+// Example code for integration with CS-Cart
+const API_KEY = 'cs-cart-delivery' // API key for authorization
 
-fetch('https://delivery.uroven.pro/api/calculate', {
+fetch('[API_URL]', {
     method: 'POST',
     headers: {
         'Content-Type': 'application/json',
@@ -205,22 +181,22 @@ fetch('https://delivery.uroven.pro/api/calculate', {
             lon: 135.223427,
         },
         order: {
-            weight: totalWeight, // Вес заказа в кг
-            cost: totalCost, // Стоимость заказа в рублях
-            items: totalItems, // Количество товаров (опционально)
+            weight: totalWeight, // Order weight in kg
+            cost: totalCost, // Order cost in rubles
+            items: totalItems, // Number of items (optional)
         },
     }),
 })
     .then((response) => {
         if (!response.ok) {
-            throw new Error('Ошибка при запросе к API: ' + response.status)
+            throw new Error('Error when requesting API: ' + response.status)
         }
         return response.json()
     })
     .then((data) => {
-        // Использовать data.delivery_cost для отображения стоимости доставки
-        // Использовать data.delivery_time для отображения времени доставки
-        // Можно также использовать data.options для отображения вариантов доставки
+        // Use data.delivery_cost to display delivery cost
+        // Use data.delivery_time to display delivery time
+        // You can also use data.options to display delivery options
     })
-    .catch((error) => console.error('Ошибка:', error))
+    .catch((error) => console.error('Error:', error))
 ```
