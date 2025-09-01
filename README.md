@@ -1,93 +1,226 @@
-# delivery-uroven
+# API сервис калькуляции доставки
 
+Простой и эффективный API-сервис для расчета стоимости доставки на основе координат адреса и параметров заказа.
 
+## Функциональность
 
-## Getting started
+-   Расчет стоимости доставки на основе координат адреса
+-   Учет веса и стоимости заказа
+-   Различные варианты доставки в зависимости от расстояния
+-   Простой REST API для интеграции с CS-Cart
+-   Защита API с помощью ключей доступа
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+## Технологии
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+-   TypeScript
+-   Express.js
+-   Docker
+-   Traefik (для проксирования и SSL)
 
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Структура проекта
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/uroven-gitlab-group/delivery-uroven.git
-git branch -M main
-git push -uf origin main
+delivery-uroven/
+├── src/
+│   ├── models/         # Типы данных
+│   ├── routes/         # API маршруты
+│   ├── services/       # Бизнес-логика
+│   └── index.ts        # Точка входа
+├── .env                # Переменные окружения
+├── docker-compose.yml  # Конфигурация Docker Compose
+├── Dockerfile          # Конфигурация для создания Docker образа
+├── package.json        # Зависимости NPM
+└── tsconfig.json       # Конфигурация TypeScript
 ```
 
-## Integrate with your tools
+## Особенности проекта
 
-- [ ] [Set up project integrations](https://gitlab.com/uroven-gitlab-group/delivery-uroven/-/settings/integrations)
+### Алиасы путей импорта
 
-## Collaborate with your team
+В проекте настроены алиасы путей для импорта, что делает код более читаемым:
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+```typescript
+// Вместо относительных путей
+import { DeliveryCalculationRequest } from '../models/deliveryData'
 
-## Test and Deploy
+// Используем алиасы
+import { DeliveryCalculationRequest } from '@models/deliveryData'
+```
 
-Use the built-in continuous integration in GitLab.
+Доступные алиасы:
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+-   `@/*` - доступ к любому файлу из директории src
+-   `@models/*` - доступ к моделям данных
+-   `@services/*` - доступ к сервисам
+-   `@routes/*` - доступ к маршрутам API
 
-***
+## Локальная разработка
 
-# Editing this README
+1. Клонировать репозиторий:
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+    ```
+    git clone https://gitlab.com/uroven-gitlab-group/delivery-uroven.git
+    cd delivery-uroven
+    ```
 
-## Suggestions for a good README
+2. Установить зависимости:
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+    ```
+    npm install
+    ```
 
-## Name
-Choose a self-explaining name for your project.
+3. Запустить в режиме разработки:
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+    ```
+    npm run dev
+    ```
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+4. API будет доступно по адресу: http://localhost:3000
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## API эндпоинты
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### Авторизация API
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+Все запросы к API должны включать заголовок `x-api-key` с действительным ключом API.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+```
+x-api-key: cs-cart-delivery
+```
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Для тестирования можно использовать ключ `test-api-key`.
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### GET /api/test
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+Проверка доступности API и корректности авторизации.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+**Заголовки:**
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+```
+x-api-key: cs-cart-delivery
+```
 
-## License
-For open source projects, say how it is licensed.
+**Ответ:**
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+```json
+{
+    "status": "ok",
+    "message": "API доступен и защищен",
+    "timestamp": "2023-11-15T10:30:15.123Z"
+}
+```
+
+### POST /api/calculate
+
+Расчет стоимости доставки.
+
+**Заголовки:**
+
+```
+Content-Type: application/json
+x-api-key: cs-cart-delivery
+```
+
+**Запрос:**
+
+```json
+{
+    "coordinates": {
+        "lat": 48.498826,
+        "lon": 135.223427
+    },
+    "order": {
+        "weight": 5.5,
+        "cost": 3500,
+        "items": 2
+    }
+}
+```
+
+**Ответ:**
+
+```json
+{
+    "delivery_cost": 305,
+    "delivery_time": "2-3 дня",
+    "options": [
+        {
+            "name": "Экспресс доставка",
+            "cost": 458,
+            "description": "Доставка в течение 3-5 часов"
+        }
+    ]
+}
+```
+
+## Развертывание на VPS
+
+### Предварительные требования
+
+-   Docker и Docker Compose
+-   Настроенный Traefik с внешней сетью traefik-public
+-   Доменное имя, указывающее на ваш сервер (delivery.uroven.pro)
+
+### Шаги деплоя
+
+1. Клонировать репозиторий на сервер:
+
+    ```
+    git clone https://gitlab.com/uroven-gitlab-group/delivery-uroven.git
+    cd delivery-uroven
+    ```
+
+2. Настроить переменные окружения в файле .env (при необходимости)
+
+3. Запустить сервис с помощью Docker Compose:
+
+    ```
+    docker-compose up -d
+    ```
+
+4. Проверить логи:
+
+    ```
+    docker-compose logs -f
+    ```
+
+5. API будет доступно по адресу: https://delivery.uroven.pro
+
+## Интеграция с CS-Cart
+
+После проверки адреса на вхождение в зону доставки (через Supabase), CS-Cart может отправить запрос на расчет стоимости доставки:
+
+```javascript
+// Пример кода для интеграции с CS-Cart
+const API_KEY = 'cs-cart-delivery' // API ключ для авторизации
+
+fetch('https://delivery.uroven.pro/api/calculate', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+    },
+    body: JSON.stringify({
+        coordinates: {
+            lat: 48.498826,
+            lon: 135.223427,
+        },
+        order: {
+            weight: totalWeight, // Вес заказа в кг
+            cost: totalCost, // Стоимость заказа в рублях
+            items: totalItems, // Количество товаров (опционально)
+        },
+    }),
+})
+    .then((response) => {
+        if (!response.ok) {
+            throw new Error('Ошибка при запросе к API: ' + response.status)
+        }
+        return response.json()
+    })
+    .then((data) => {
+        // Использовать data.delivery_cost для отображения стоимости доставки
+        // Использовать data.delivery_time для отображения времени доставки
+        // Можно также использовать data.options для отображения вариантов доставки
+    })
+    .catch((error) => console.error('Ошибка:', error))
+```
