@@ -43,7 +43,7 @@ app.get('/', (req: express.Request, res: express.Response) => {
 app.use((req: express.Request, res: express.Response) => {
     res.status(404).json({
         error: true,
-        message: 'Маршрут не найден',
+        message: 'Маршрут не найден!',
         path: req.originalUrl,
     })
 })
