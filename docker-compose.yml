@@ -1,5 +1,4 @@
 services:
-    # API сервис калькуляции доставки
     delivery-api:
         build: .
         container_name: delivery-api
@@ -8,14 +7,16 @@ services:
         environment:
             - NODE_ENV=production
         networks:
-            - traefik-public
+            - traefik
         labels:
-            - 'traefik.enable=true'
-            - 'traefik.http.routers.delivery-api.rule=Host(`delivery.uroven.pro`)'
-            - 'traefik.http.routers.delivery-api.entrypoints=websecure'
-            - 'traefik.http.routers.delivery-api.tls.certresolver=letsencrypt'
-            - 'traefik.http.services.delivery-api.loadbalancer.server.port=3000'
+            - traefik.enable=true
+            - traefik.http.routers.delivery-api.rule=Host(`delivery.uroven.pro`)
+            - traefik.http.routers.delivery-api.entrypoints=websecure
+            - traefik.http.routers.delivery-api.tls.certresolver=mytlschallenge
+            - traefik.http.routers.delivery-api.tls=true
+            - traefik.http.services.delivery-api.loadbalancer.server.port=3000
 
 networks:
-    traefik-public:
+    traefik:
         external: true
+        name: n8n_default
