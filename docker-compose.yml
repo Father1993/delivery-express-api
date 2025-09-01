@@ -1,0 +1,21 @@
+services:
+    # API сервис калькуляции доставки
+    delivery-api:
+        build: .
+        container_name: delivery-api
+        restart: always
+        env_file: .env
+        environment:
+            - NODE_ENV=production
+        networks:
+            - traefik-public
+        labels:
+            - 'traefik.enable=true'
+            - 'traefik.http.routers.delivery-api.rule=Host(`delivery.uroven.pro`)'
+            - 'traefik.http.routers.delivery-api.entrypoints=websecure'
+            - 'traefik.http.routers.delivery-api.tls.certresolver=letsencrypt'
+            - 'traefik.http.services.delivery-api.loadbalancer.server.port=3000'
+
+networks:
+    traefik-public:
+        external: true
