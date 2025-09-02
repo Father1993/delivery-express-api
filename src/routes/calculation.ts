@@ -4,10 +4,8 @@ import { DeliveryCalculationRequest } from '@models/deliveryData'
 
 const router = express.Router()
 
-// API ключи (в реальном приложении должны храниться в базе данных или защищенном хранилище)
 const API_KEYS: Record<string, boolean> = {
-    'cs-cart-delivery': true, // ключ для CS-Cart
-    'test-api-key': true, // тестовый ключ для разработки
+    [process.env.API_KEY_CS_CART as string]: true,
 }
 
 // Middleware для проверки API ключа
@@ -17,20 +15,17 @@ const validateApiKey = (
     next: express.NextFunction
 ) => {
     const apiKey = req.headers['x-api-key'] as string
-
     if (!apiKey || !API_KEYS[apiKey]) {
         return res.status(401).json({
             error: true,
             message: 'Неверный или отсутствующий API ключ',
         })
     }
-
     next()
 }
 
 // Middleware для Basic Authentication
 const basicAuth = (req: Request, res: Response, next: express.NextFunction) => {
-    // Получаем учетные данные из .env
     const username = process.env.API_USERNAME
     const password = process.env.API_PASSWORD
 
@@ -79,7 +74,7 @@ const basicAuth = (req: Request, res: Response, next: express.NextFunction) => {
 // Middleware для защиты API - комбинируем Basic Auth и API Key
 const apiProtection = [basicAuth, validateApiKey]
 
-// Функция валидации запроса
+// Валидации запроса
 const validateCalculationRequest = (
     data: any
 ): { isValid: boolean; error?: string } => {
