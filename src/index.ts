@@ -1,12 +1,10 @@
 import express from 'express'
 import cors from 'cors'
-import calculationRoutes from '@routes/calculation'
 import dotenv from 'dotenv'
+import calculationRoutes from '@routes/calculation'
 
-// Загрузка переменных окружения
 dotenv.config()
 
-// Инициализация приложения Express
 const app = express()
 const port = process.env.PORT || 3000
 
@@ -43,7 +41,7 @@ app.get('/', (req: express.Request, res: express.Response) => {
 app.use((req: express.Request, res: express.Response) => {
     res.status(404).json({
         error: true,
-        message: 'Маршрут не найден!',
+        message: 'Маршрут не найден',
         path: req.originalUrl,
     })
 })
