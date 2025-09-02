@@ -1,5 +1,3 @@
-// Типы данных для API калькуляции доставки
-
 // Координаты адреса
 export interface Coordinates {
     lat: number
