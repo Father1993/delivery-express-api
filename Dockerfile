@@ -1,5 +1,5 @@
 # Базовый образ Node.js
-FROM node:18-alpine
+FROM node:lts-alpine
 
 # Создание рабочей директории
 WORKDIR /app
