@@ -1,12 +1,13 @@
 import express, { Request, Response } from 'express'
+import dotenv from 'dotenv'
 import { calculateDelivery } from '@services/calculationService'
 import { DeliveryCalculationRequest } from '@models/deliveryData'
 
+dotenv.config()
+
 const router = express.Router()
 
-const API_KEYS: Record<string, boolean> = {
-    [process.env.API_KEY_CS_CART as string]: true,
-}
+const API_KEYS = process.env.API_KEY_CS_CART as string
 
 // Middleware для проверки API ключа
 const validateApiKey = (
@@ -15,7 +16,7 @@ const validateApiKey = (
     next: express.NextFunction
 ) => {
     const apiKey = req.headers['x-api-key'] as string
-    if (!apiKey || !API_KEYS[apiKey]) {
+    if (!apiKey || apiKey !== API_KEYS) {
         return res.status(401).json({
             error: true,
             message: 'Неверный или отсутствующий API ключ',
