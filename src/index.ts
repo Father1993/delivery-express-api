@@ -30,8 +30,8 @@ app.use('/api', calculationRoutes)
 // Простой маршрут для проверки работы API
 app.get('/', (req: express.Request, res: express.Response) => {
     res.json({
-        status: 'ok',
-        message: 'API сервис калькуляции доставки работает',
+        status: 'Ok',
+        message: 'API сервис калькуляции доставки работает | Уровень',
         version: '1.0.0',
         timestamp: new Date().toISOString(),
     })
