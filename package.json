@@ -1,8 +1,8 @@
 {
-    "name": "delivery-uroven",
+    "name": "delivery-api",
     "version": "1.0.0",
     "license": "UNLICENSED",
-    "description": "API сервис калькуляции доставки | Uroven",
+    "description": "API сервис калькуляции доставки",
     "main": "dist/index.js",
     "scripts": {
         "build": "tsc && tsc-alias",

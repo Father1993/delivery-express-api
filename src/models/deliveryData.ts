@@ -17,14 +17,16 @@ export interface DeliveryCalculationRequest {
     order: OrderInfo
 }
 
+// Дополнительные опции
+export interface DeliveryOption {
+    name: string
+    cost: number
+    description: string
+}
+
 // Ответ с расчетом доставки
 export interface DeliveryCalculationResponse {
     delivery_cost: number // Стоимость доставки в рублях
     delivery_time: string // Примерное время доставки (например, "1-2 дня")
-    options?: Array<{
-        // Опциональные дополнительные варианты доставки
-        name: string // Название опции
-        cost: number // Дополнительная стоимость
-        description: string // Описание опции
-    }>
+    options?: DeliveryOption[]
 }
