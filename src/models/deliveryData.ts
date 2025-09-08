@@ -24,9 +24,24 @@ export interface DeliveryOption {
     description: string
 }
 
+// Информация о зоне доставки
+export interface ZoneInfo {
+    inZone: boolean
+    zoneName?: string
+}
+
 // Ответ с расчетом доставки
 export interface DeliveryCalculationResponse {
     delivery_cost: number // Стоимость доставки в рублях
     delivery_time: string // Примерное время доставки (например, "1-2 дня")
     options?: DeliveryOption[]
+    zoneInfo?: ZoneInfo // Информация о зоне доставки
+}
+
+// Интерфейс для данных зоны доставки
+export interface DeliveryZoneData {
+    zone_name: string
+    zone_description?: string
+    metadata?: any
+    city_id?: number
 }

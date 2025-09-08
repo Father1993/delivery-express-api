@@ -1,7 +1,8 @@
 import express, { Request, Response } from 'express'
 import dotenv from 'dotenv'
 import { calculateDelivery } from '@services/calculationService'
-import { DeliveryCalculationRequest } from '@models/deliveryData'
+import { DeliveryCalculationRequest, ZoneInfo } from '@models/deliveryData'
+import { checkDeliveryZone } from '@services/zoneService'
 
 dotenv.config()
 
@@ -16,7 +17,7 @@ const validateApiKey = (
     next: express.NextFunction
 ) => {
     const apiKey = req.headers['x-api-key'] as string
-    
+
     if (!apiKey || apiKey !== API_KEY) {
         return res.status(401).json({
             error: true,
@@ -116,7 +117,7 @@ const validateCalculationRequest = (
 }
 
 // Обработчик расчета доставки
-const calculateHandler = (req: Request, res: Response) => {
+const calculateHandler = async (req: Request, res: Response) => {
     let data: any
 
     // Проверяем метод запроса и извлекаем данные соответствующим образом
@@ -155,12 +156,32 @@ const calculateHandler = (req: Request, res: Response) => {
     }
 
     try {
-        // Расчет доставки
+        // Проверка зоны доставки через Supabase
+        const zoneCheck = await checkDeliveryZone(data.coordinates)
+
+        // Если адрес не входит в зону доставки
+        if (!zoneCheck.inZone) {
+            return res.status(422).json({
+                error: true,
+                message: 'Адрес находится вне зоны доставки',
+                details:
+                    zoneCheck.error ||
+                    'Доставка по указанному адресу невозможна',
+            })
+        }
+
+        // Расчет доставки если адрес в зоне доставки
         const result = calculateDelivery(data as DeliveryCalculationRequest)
+
+        // Добавляем информацию о зоне доставки
+        result.zoneInfo = {
+            inZone: true,
+            zoneName: zoneCheck.zoneName,
+        }
 
         // Логирование успешного запроса
         console.log(
-            `Расчет для координат: ${data.coordinates.lat},${data.coordinates.lon} - Стоимость: ${result.delivery_cost}`
+            `Расчет для координат: ${data.coordinates.lat},${data.coordinates.lon} - Зона: ${zoneCheck.zoneName} - Стоимость: ${result.delivery_cost}`
         )
 
         // Возвращаем результат
