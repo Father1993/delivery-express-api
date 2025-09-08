@@ -37,3 +37,11 @@ export interface DeliveryCalculationResponse {
     options?: DeliveryOption[]
     zoneInfo?: ZoneInfo // Информация о зоне доставки
 }
+
+// Интерфейс для данных зоны доставки
+export interface DeliveryZoneData {
+    zone_name: string
+    zone_description?: string
+    metadata?: any
+    city_id?: number
+}
