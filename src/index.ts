@@ -2,6 +2,8 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import calculationRoutes from '@routes/calculation'
+import zoneRoutes from '@routes/zone'
+import { apiProtection } from '@middleware/auth'
 
 dotenv.config()
 
@@ -24,8 +26,28 @@ app.use(
     }
 )
 
-// Маршруты
-app.use('/api', calculationRoutes)
+// Организация API маршрутов
+const apiRouter = express.Router()
+
+// Регистрация маршрутов
+apiRouter.use('/calculate', calculationRoutes)
+apiRouter.use('/zone', zoneRoutes)
+
+// Тестовый маршрут для проверки доступности API
+apiRouter.get(
+    '/health',
+    apiProtection,
+    (req: express.Request, res: express.Response) => {
+        res.json({
+            status: 'ok',
+            message: 'API доступен и защищен',
+            timestamp: new Date().toISOString(),
+        })
+    }
+)
+
+// Подключаем все API маршруты с префиксом /api
+app.use('/api', apiRouter)
 
 // Простой маршрут для проверки работы API
 app.get('/', (req: express.Request, res: express.Response) => {

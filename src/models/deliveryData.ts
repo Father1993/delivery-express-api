@@ -15,6 +15,7 @@ export interface OrderInfo {
 export interface DeliveryCalculationRequest {
     coordinates: Coordinates
     order: OrderInfo
+    zoneInfo?: ZoneInfo // Информация о зоне доставки
 }
 
 // Дополнительные опции
