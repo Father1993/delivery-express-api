@@ -15,6 +15,7 @@ export interface OrderInfo {
 export interface DeliveryCalculationRequest {
     coordinates: Coordinates
     order: OrderInfo
+    zoneInfo?: ZoneInfo // Информация о зоне доставки
 }
 
 // Дополнительные опции
@@ -36,4 +37,12 @@ export interface DeliveryCalculationResponse {
     delivery_time: string // Примерное время доставки (например, "1-2 дня")
     options?: DeliveryOption[]
     zoneInfo?: ZoneInfo // Информация о зоне доставки
+}
+
+// Интерфейс для данных зоны доставки
+export interface DeliveryZoneData {
+    zone_name: string
+    zone_description?: string
+    metadata?: any
+    city_id?: number
 }
