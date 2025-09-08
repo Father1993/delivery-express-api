@@ -1,6 +1,6 @@
-import dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
-import { Coordinates } from '@models/deliveryData'
+import dotenv from 'dotenv'
+import { Coordinates, DeliveryZoneData } from '@models/deliveryData'
 
 dotenv.config()
 
@@ -10,19 +10,13 @@ const supabaseAnonKey = process.env.SUPABASE_ANON_KEY as string
 
 // Инициализация клиента Supabase
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const delivery_method = 'is_in_delivery_zone'
 
 /**
  * Проверяет, входят ли координаты в зону доставки
  * @param coordinates - координаты для проверки
  * @returns результат проверки зоны
  */
-// Интерфейс для данных зоны доставки
-interface DeliveryZoneData {
-    zone_name: string
-    zone_description?: string
-    metadata?: any
-    city_id?: number
-}
 
 export const checkDeliveryZone = async (
     coordinates: Coordinates
@@ -33,40 +27,20 @@ export const checkDeliveryZone = async (
     zoneData?: DeliveryZoneData[]
 }> => {
     try {
-        // Используем прямой REST запрос по аналогии с примером PHP кода
-        const url = `${supabaseUrl}/rest/v1/rpc/is_in_delivery_zone`
-
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                apikey: supabaseAnonKey,
-                Authorization: `Bearer ${supabaseAnonKey}`,
-            },
-            body: JSON.stringify({
-                lat: coordinates.lat,
-                lon: coordinates.lon,
-            }),
+        // Используем метод rpc клиента Supabase вместо прямого fetch
+        const { data, error } = await supabase.rpc(delivery_method, {
+            lat: coordinates.lat,
+            lon: coordinates.lon,
         })
-
-        // Обработка HTTP ошибок
-        if (!response.ok) {
-            const errorText = await response.text()
-            console.error(
-                `Ошибка при запросе к Supabase: ${response.status}. Ответ: ${errorText}`
-            )
+        if (error) {
+            console.error(`Ошибка при запросе к Supabase: ${error.message}`)
             return {
                 inZone: false,
-                error: `Ошибка при проверке зоны доставки: ${response.status} ${response.statusText}`,
+                error: `Ошибка при проверке зоны доставки: ${error.message}`,
             }
         }
-
-        const data = await response.json()
-
-        // Подробное логирование для отладки
         console.log('Ответ Supabase:', JSON.stringify(data, null, 2))
 
-        // Обработка результата - функция возвращает массив зон
         // Если массив пустой - адрес вне зоны доставки
         // Если есть хотя бы одна зона - адрес входит в зону доставки
         if (!data || !Array.isArray(data) || data.length === 0) {
