@@ -1,89 +1,38 @@
-import express, { Request, Response } from 'express'
-import dotenv from 'dotenv'
-import { calculateDelivery } from '@services/calculationService'
-import { DeliveryCalculationRequest, ZoneInfo } from '@models/deliveryData'
-import { checkDeliveryZone } from '@services/zoneService'
+/**
+ * API маршруты для расчета доставки
+ *
+ * Процесс работы с API:
+ * 1. Вызвать POST /api/zone/check с координатами для проверки возможности доставки
+ * 2. Если зона доставки доступна, использовать полученную информацию в запросе к POST /api/calculate
+ *
+ * Раздельные эндпоинты позволяют:
+ * - Проверять зону доставки отдельно от расчета
+ * - Кэшировать результаты проверки зоны на стороне клиента
+ * - Строить более гибкую логику в клиентском приложении
+ */
 
-dotenv.config()
+import express, { Request, Response } from 'express'
+import { calculateDelivery } from '@services/calculationService'
+import { DeliveryCalculationRequest } from '@models/deliveryData'
+import { apiProtection } from '@middleware/auth'
 
 const router = express.Router()
-
-const API_KEY = process.env.API_KEY_CS_CART as string
-
-// Middleware для проверки API ключа
-const validateApiKey = (
-    req: Request,
-    res: Response,
-    next: express.NextFunction
-) => {
-    const apiKey = req.headers['x-api-key'] as string
-
-    if (!apiKey || apiKey !== API_KEY) {
-        return res.status(401).json({
-            error: true,
-            message: 'Неверный или отсутствующий API ключ',
-        })
-    }
-    next()
-}
-
-// Middleware для Basic Authentication
-const basicAuth = (req: Request, res: Response, next: express.NextFunction) => {
-    const username = process.env.API_USERNAME
-    const password = process.env.API_PASSWORD
-
-    // Проверяем, настроены ли учетные данные
-    if (!username || !password) {
-        console.warn(
-            'Basic Auth не настроен! Проверьте переменные окружения API_USERNAME и API_PASSWORD.'
-        )
-        return next()
-    }
-
-    // Получаем заголовок Authorization
-    const authHeader = req.headers.authorization
-
-    if (!authHeader) {
-        return res
-            .status(401)
-            .set('WWW-Authenticate', 'Basic realm="API Access"')
-            .json({
-                error: true,
-                message: 'Требуется Basic Authentication',
-            })
-    }
-
-    // Обрабатываем заголовок
-    const auth = Buffer.from(authHeader.split(' ')[1], 'base64')
-        .toString()
-        .split(':')
-    const user = auth[0]
-    const pass = auth[1]
-
-    // Проверяем учетные данные
-    if (user !== username || pass !== password) {
-        return res
-            .status(401)
-            .set('WWW-Authenticate', 'Basic realm="API Access"')
-            .json({
-                error: true,
-                message: 'Неверные учетные данные',
-            })
-    }
-
-    next()
-}
-
-// Middleware для защиты API - комбинируем Basic Auth и API Key
-const apiProtection = [basicAuth, validateApiKey]
 
 // Валидации запроса
 const validateCalculationRequest = (
     data: any
 ): { isValid: boolean; error?: string } => {
     // Проверка наличия необходимых полей
-    if (!data || !data.coordinates || !data.order) {
-        return { isValid: false, error: 'Отсутствуют обязательные поля' }
+    if (!data || !data.coordinates || !data.order || !data.zoneInfo) {
+        return {
+            isValid: false,
+            error: 'Отсутствуют обязательные поля (coordinates, order, zoneInfo)',
+        }
+    }
+
+    // Проверка зоны доставки
+    if (!data.zoneInfo.inZone) {
+        return { isValid: false, error: 'Адрес находится вне зоны доставки' }
     }
 
     // Проверка координат
@@ -116,34 +65,22 @@ const validateCalculationRequest = (
     return { isValid: true }
 }
 
-// Обработчик расчета доставки
+/**
+ * Обработчик расчета доставки
+ *
+ * Важно: Перед вызовом этого метода нужно получить информацию о зоне доставки
+ * через /api/check-zone и включить её в запрос
+ *
+ * @route POST /api/calculate
+ * @param {Object} req.body - Данные для расчета доставки
+ * @param {Object} req.body.coordinates - Координаты доставки
+ * @param {Object} req.body.order - Информация о заказе
+ * @param {Object} req.body.zoneInfo - Информация о зоне доставки (из /api/check-zone)
+ * @returns {Object} Результат расчета доставки
+ */
 const calculateHandler = async (req: Request, res: Response) => {
-    let data: any
-
-    // Проверяем метод запроса и извлекаем данные соответствующим образом
-    if (req.method === 'POST') {
-        // Для POST получаем данные из тела запроса
-        data = req.body
-    } else if (req.method === 'GET') {
-        // Для GET пытаемся получить JSON из query параметра 'data'
-        try {
-            const jsonData = req.query.data
-            if (typeof jsonData === 'string') {
-                data = JSON.parse(jsonData)
-            } else {
-                return res.status(400).json({
-                    error: true,
-                    message:
-                        'Для GET запроса необходим параметр data с JSON данными',
-                })
-            }
-        } catch (e) {
-            return res.status(400).json({
-                error: true,
-                message: 'Некорректный JSON в параметре data',
-            })
-        }
-    }
+    // Получаем данные из тела запроса
+    const data = req.body
 
     // Валидация запроса
     const validation = validateCalculationRequest(data)
@@ -156,32 +93,15 @@ const calculateHandler = async (req: Request, res: Response) => {
     }
 
     try {
-        // Проверка зоны доставки через Supabase
-        const zoneCheck = await checkDeliveryZone(data.coordinates)
-
-        // Если адрес не входит в зону доставки
-        if (!zoneCheck.inZone) {
-            return res.status(422).json({
-                error: true,
-                message: 'Адрес находится вне зоны доставки',
-                details:
-                    zoneCheck.error ||
-                    'Доставка по указанному адресу невозможна',
-            })
-        }
-
-        // Расчет доставки если адрес в зоне доставки
+        // Расчет доставки с использованием предоставленной информации о зоне
         const result = calculateDelivery(data as DeliveryCalculationRequest)
 
-        // Добавляем информацию о зоне доставки
-        result.zoneInfo = {
-            inZone: true,
-            zoneName: zoneCheck.zoneName,
-        }
+        // Используем информацию о зоне из запроса
+        result.zoneInfo = data.zoneInfo
 
         // Логирование успешного запроса
         console.log(
-            `Расчет для координат: ${data.coordinates.lat},${data.coordinates.lon} - Зона: ${zoneCheck.zoneName} - Стоимость: ${result.delivery_cost}`
+            `Расчет для координат: ${data.coordinates.lat},${data.coordinates.lon} - Зона: ${data.zoneInfo.zoneName} - Стоимость: ${result.delivery_cost}`
         )
 
         // Возвращаем результат
@@ -195,10 +115,15 @@ const calculateHandler = async (req: Request, res: Response) => {
     }
 }
 
-// POST /api/calculate - Расчет стоимости доставки (POST)
-router.post('/calculate', apiProtection, calculateHandler)
-// GET /api/calculate - Расчет стоимости доставки (GET)
-router.get('/calculate', apiProtection, calculateHandler)
+// API маршруты
+router.post('/', apiProtection, calculateHandler) // POST /api/calculate
+router.get('/test', apiProtection, (req: Request, res: Response) => {
+    res.json({
+        status: 'ok',
+        message: 'API доступен и защищен',
+        timestamp: new Date().toISOString(),
+    })
+})
 // GET /api/test - Тестовый метод для проверки доступности API
 router.get('/test', apiProtection, (req: Request, res: Response) => {
     res.json({

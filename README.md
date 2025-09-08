@@ -79,6 +79,19 @@ import { DeliveryCalculationRequest } from '@models/deliveryData'
 
 ## API эндпоинты
 
+### Важное изменение в процессе работы API
+
+Для правильного использования API необходимо:
+
+1. Сначала проверить координаты через `/api/check-zone`
+2. Затем использовать полученные данные для расчета доставки через `/api/calculate`
+
+Такой подход позволяет:
+
+-   Проверять зону доставки до расчета стоимости
+-   Кэшировать результаты проверки зоны на стороне клиента
+-   Строить более гибкую логику в клиентском приложении
+
 ### Авторизация API
 
 Все запросы к API должны включать заголовок `x-api-key` с действительным ключом API.
@@ -109,9 +122,51 @@ x-api-key: cs-cart-delivery
 }
 ```
 
+### POST /api/check-zone
+
+Проверка доступности доставки по координатам (обязательный первый шаг).
+
+**Заголовки:**
+
+```
+Content-Type: application/json
+x-api-key: cs-cart-delivery
+```
+
+**Запрос:**
+
+```json
+{
+    "coordinates": {
+        "lat": 48.498826,
+        "lon": 135.223427
+    }
+}
+```
+
+**Ответ (успех):**
+
+```json
+{
+    "inZone": true,
+    "zoneName": "Центральный район",
+    "timestamp": "2023-11-15T10:30:15.123Z"
+}
+```
+
+**Ответ (вне зоны доставки):**
+
+```json
+{
+    "inZone": false,
+    "error": "Адрес находится вне зоны доставки",
+    "timestamp": "2023-11-15T10:30:15.123Z"
+}
+```
+
 ### POST /api/calculate
 
-Расчет стоимости доставки.
+Расчет стоимости доставки (второй шаг после проверки зоны).
 
 **Заголовки:**
 
@@ -132,6 +187,10 @@ x-api-key: cs-cart-delivery
         "weight": 5.5,
         "cost": 3500,
         "items": 2
+    },
+    "zoneInfo": {
+        "inZone": true,
+        "zoneName": "Центральный район"
     }
 }
 ```
@@ -187,40 +246,105 @@ x-api-key: cs-cart-delivery
 
 ## Интеграция с CS-Cart
 
-После проверки адреса на вхождение в зону доставки (через Supabase), CS-Cart может отправить запрос на расчет стоимости доставки:
+Двухэтапный процесс интеграции:
 
 ```javascript
 // Пример кода для интеграции с CS-Cart
 const API_KEY = 'cs-cart-delivery' // API ключ для авторизации
+const API_BASE = 'https://delivery.uroven.pro/api'
 
-fetch('https://delivery.uroven.pro/api/calculate', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': API_KEY,
-    },
-    body: JSON.stringify({
-        coordinates: {
-            lat: 48.498826,
-            lon: 135.223427,
+// Шаг 1: Проверка зоны доставки
+async function checkDeliveryZone(coordinates) {
+    const response = await fetch(`${API_BASE}/check-zone`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY,
         },
-        order: {
-            weight: totalWeight, // Вес заказа в кг
-            cost: totalCost, // Стоимость заказа в рублях
-            items: totalItems, // Количество товаров (опционально)
+        body: JSON.stringify({ coordinates }),
+    })
+
+    if (!response.ok) {
+        throw new Error('Ошибка при проверке зоны доставки: ' + response.status)
+    }
+
+    return response.json()
+}
+
+// Шаг 2: Расчет стоимости доставки
+async function calculateDelivery(coordinates, order, zoneInfo) {
+    const response = await fetch(`${API_BASE}/calculate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY,
         },
-    }),
-})
-    .then((response) => {
-        if (!response.ok) {
-            throw new Error('Ошибка при запросе к API: ' + response.status)
+        body: JSON.stringify({
+            coordinates,
+            order,
+            zoneInfo,
+        }),
+    })
+
+    if (!response.ok) {
+        throw new Error('Ошибка при расчете доставки: ' + response.status)
+    }
+
+    return response.json()
+}
+
+// Пример использования
+const coordinates = {
+    lat: 48.498826,
+    lon: 135.223427,
+}
+
+const order = {
+    weight: 5.5, // Вес заказа в кг
+    cost: 3500, // Стоимость заказа в рублях
+    items: 2, // Количество товаров (опционально)
+}
+
+// Полный процесс расчета доставки
+async function processDelivery() {
+    try {
+        // Сначала проверяем зону доставки
+        const zoneInfo = await checkDeliveryZone(coordinates)
+
+        // Если адрес вне зоны доставки, показываем сообщение
+        if (!zoneInfo.inZone) {
+            console.log(
+                'Доставка невозможна: ' +
+                    (zoneInfo.error || 'Адрес вне зоны доставки')
+            )
+            return
         }
-        return response.json()
-    })
-    .then((data) => {
-        // Использовать data.delivery_cost для отображения стоимости доставки
-        // Использовать data.delivery_time для отображения времени доставки
-        // Можно также использовать data.options для отображения вариантов доставки
-    })
-    .catch((error) => console.error('Ошибка:', error))
+
+        // Если адрес в зоне доставки, рассчитываем стоимость
+        const deliveryData = await calculateDelivery(
+            coordinates,
+            order,
+            zoneInfo
+        )
+
+        // Используем полученные данные
+        console.log('Стоимость доставки:', deliveryData.delivery_cost)
+        console.log('Время доставки:', deliveryData.delivery_time)
+
+        // Варианты доставки, если доступны
+        if (deliveryData.options && deliveryData.options.length > 0) {
+            console.log('Доступные варианты доставки:')
+            deliveryData.options.forEach((option) => {
+                console.log(
+                    `- ${option.name}: ${option.cost} руб. (${option.description})`
+                )
+            })
+        }
+    } catch (error) {
+        console.error('Ошибка:', error)
+    }
+}
+
+// Запускаем процесс
+processDelivery()
 ```
