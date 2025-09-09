@@ -1,26 +1,12 @@
-/**
- * API маршруты для проверки зоны доставки
- */
 import express, { Request, Response } from 'express'
 import { checkDeliveryZone } from '@services/zoneService'
 import { apiProtection } from '@middleware/auth'
 
 const router = express.Router()
 
-/**
- * Обработчик для проверки зоны доставки
- *
- * Принимает координаты и проверяет, находятся ли они в зоне доставки
- * Возвращает информацию о зоне доставки, которую нужно включить в запрос на расчет
- *
- * @route POST /api/zone/check
- * @param {Object} req.body.coordinates - Координаты для проверки {lat, lon}
- * @returns {Object} Информация о зоне доставки
- */
 const checkZoneHandler = async (req: Request, res: Response) => {
     const coordinates = req.body.coordinates
 
-    // Проверка наличия координат
     if (
         !coordinates ||
         typeof coordinates.lat !== 'number' ||
@@ -33,10 +19,7 @@ const checkZoneHandler = async (req: Request, res: Response) => {
     }
 
     try {
-        // Проверка зоны доставки через Supabase
         const zoneCheck = await checkDeliveryZone(coordinates)
-
-        // Возвращаем результат проверки
         return res.json({
             ...zoneCheck,
             timestamp: new Date().toISOString(),
@@ -50,7 +33,6 @@ const checkZoneHandler = async (req: Request, res: Response) => {
     }
 }
 
-// POST /api/zone/ - Проверка зоны доставки
 router.post('/', apiProtection, checkZoneHandler)
 
 export default router
