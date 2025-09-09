@@ -3,6 +3,7 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import calculationRoutes from '@routes/calculation'
 import zoneRoutes from '@routes/zone'
+import { logger } from '@utils/logger'
 
 dotenv.config()
 
@@ -12,13 +13,25 @@ const port = process.env.PORT || 3000
 app.use(cors())
 app.use(express.json())
 
+// Логирование запросов
 app.use(
     (
         req: express.Request,
         res: express.Response,
         next: express.NextFunction
     ) => {
-        console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`)
+        logger.info(`${req.method} ${req.url} - IP: ${req.ip}`)
+        
+        // Логируем завершение запроса
+        const startTime = Date.now()
+        res.on('finish', () => {
+            const duration = Date.now() - startTime
+            const logLevel = res.statusCode >= 400 ? 'warn' : 'info'
+            logger[logLevel](
+                `${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`
+            )
+        })
+        
         next()
     }
 )
@@ -39,6 +52,7 @@ app.get('/', (req: express.Request, res: express.Response) => {
 })
 
 app.use((req: express.Request, res: express.Response) => {
+    logger.warn(`Маршрут не найден: ${req.originalUrl}`)
     res.status(404).json({
         error: true,
         message: 'Маршрут не найден',
@@ -53,7 +67,12 @@ app.use(
         res: express.Response,
         next: express.NextFunction
     ) => {
-        console.error('Ошибка сервера:', err.message)
+        logger.error(`Ошибка сервера: ${err.message}`, { 
+            stack: err.stack,
+            url: req.originalUrl,
+            method: req.method
+        })
+        
         res.status(500).json({
             error: true,
             message: 'Внутренняя ошибка сервера',
@@ -62,5 +81,5 @@ app.use(
 )
 
 app.listen(port, () => {
-    console.log(`Сервер запущен на порту ${port}`)
+    logger.info(`Сервер запущен на порту ${port}`)
 })

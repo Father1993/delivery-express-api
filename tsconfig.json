@@ -14,7 +14,8 @@
             "@models/*": ["src/models/*"],
             "@services/*": ["src/services/*"],
             "@routes/*": ["src/routes/*"],
-            "@middleware/*": ["src/middleware/*"]
+            "@middleware/*": ["src/middleware/*"],
+            "@utils/*": ["src/utils/*"]
         }
     },
     "include": ["src/**/*"],
