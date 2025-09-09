@@ -2,6 +2,7 @@ import {
     DeliveryCalculationRequest,
     DeliveryCalculationResponse,
 } from '@models/deliveryData'
+import { logger } from '@utils/logger'
 
 // Базовые тарифы
 const BASE_DELIVERY_COST = 150 // Базовая стоимость доставки
@@ -37,19 +38,25 @@ export const calculateDelivery = (
     data: DeliveryCalculationRequest
 ): DeliveryCalculationResponse => {
     const { coordinates, order } = data
+    
+    logger.debug('Начало расчета доставки', { coordinates, order })
 
     // Расчет расстояния в километрах (упрощенно)
     const distanceInKm = calculateDistance(BASE_COORDINATES, coordinates)
+    logger.debug(`Расстояние: ${distanceInKm.toFixed(2)} км`)
 
     // Расчет стоимости доставки
     let deliveryCost = BASE_DELIVERY_COST + distanceInKm * COST_PER_KM
 
     // Учет веса заказа
     deliveryCost += order.weight * WEIGHT_MULTIPLIER
+    logger.debug(`Стоимость после учета веса: ${deliveryCost.toFixed(2)} руб.`)
 
     // Учет стоимости заказа (например, если заказ дорогой - доставка дешевле)
     if (order.cost > 5000) {
+        const oldCost = deliveryCost
         deliveryCost = deliveryCost * 0.9 // Скидка 10% на доставку
+        logger.debug(`Применена скидка 10%: ${oldCost.toFixed(2)} → ${deliveryCost.toFixed(2)} руб.`)
     }
 
     // Определение времени доставки в зависимости от расстояния
@@ -60,6 +67,7 @@ export const calculateDelivery = (
     if (distanceInKm > 30) {
         deliveryTime = '3-5 дней'
     }
+    logger.debug(`Время доставки: ${deliveryTime}`)
 
     // Формирование ответа
     const response: DeliveryCalculationResponse = {
@@ -76,7 +84,9 @@ export const calculateDelivery = (
                 description: 'Доставка в течение 3-5 часов',
             },
         ]
+        logger.debug('Добавлена опция экспресс-доставки')
     }
 
+    logger.info(`Расчет доставки завершен: ${response.delivery_cost} руб., ${response.delivery_time}`)
     return response
 }
