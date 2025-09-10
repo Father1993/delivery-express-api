@@ -17,6 +17,13 @@ yarn-error.log*
 
 # Переменные окружения
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.test
+# Но можно добавить шаблон переменных окружения
+!.env.example
 
 # Кэш и временные файлы
 .npm
@@ -44,6 +51,9 @@ coverage/
 .settings/
 *.swp
 *.swo
+
+# Docker
+docker-compose.override.yml
 
 # Другое
 tmp/
