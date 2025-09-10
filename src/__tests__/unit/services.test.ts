@@ -1,13 +1,14 @@
 import { calculateDelivery } from '@services/calculationService'
 import { checkDeliveryZone } from '@services/zoneService'
 import { DeliveryCalculationRequest } from '@models/deliveryData'
+import { TEST_COORDINATES } from '../helpers'
 import '../setup'
 
 describe('Сервисы', () => {
     describe('Сервис расчета доставки', () => {
         test('рассчитывает стоимость доставки', () => {
             const request: DeliveryCalculationRequest = {
-                coordinates: { lat: 55.7558, lon: 37.6173 },
+                coordinates: TEST_COORDINATES.OUT_OF_ZONE,
                 order: { weight: 5, cost: 1000 },
                 zoneInfo: { inZone: true, zoneName: 'Тестовая зона' },
             }
@@ -18,12 +19,12 @@ describe('Сервисы', () => {
 
         test('увеличивает стоимость при увеличении веса', () => {
             const request1 = {
-                coordinates: { lat: 55.7558, lon: 37.6173 },
+                coordinates: TEST_COORDINATES.OUT_OF_ZONE,
                 order: { weight: 1, cost: 1000 },
                 zoneInfo: { inZone: true, zoneName: 'Центр' },
             }
             const request2 = {
-                coordinates: { lat: 55.7558, lon: 37.6173 },
+                coordinates: TEST_COORDINATES.OUT_OF_ZONE,
                 order: { weight: 10, cost: 1000 },
                 zoneInfo: { inZone: true, zoneName: 'Центр' },
             }
@@ -35,14 +36,14 @@ describe('Сервисы', () => {
 
     describe('Сервис проверки зоны', () => {
         test('проверяет зону доставки (в зоне)', async () => {
-            const coordinates = { lat: 48.5, lon: 135.1 } // В зоне доставки
+            const coordinates = TEST_COORDINATES.IN_ZONE // В зоне доставки
             const result = await checkDeliveryZone(coordinates)
             expect(result).toHaveProperty('inZone')
             expect(result.inZone).toBe(true)
             expect(result.zoneName).toBe('Центр Хабаровска')
         })
         test('проверяет зону доставки (вне зоны)', async () => {
-            const coordinates = { lat: 55.7558, lon: 37.6173 } // Москва - вне зоны
+            const coordinates = TEST_COORDINATES.OUT_OF_ZONE // Москва - вне зоны
             const result = await checkDeliveryZone(coordinates)
             expect(result).toHaveProperty('inZone')
             expect(result.inZone).toBe(false)
