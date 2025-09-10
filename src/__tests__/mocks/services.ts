@@ -3,7 +3,7 @@ import {
     DeliveryCalculationRequest,
     DeliveryCalculationResponse,
     ZoneInfo,
-} from '@/models/deliveryData'
+} from '@models/deliveryData'
 
 // Мок для сервиса расчета доставки
 export const mockCalculateDelivery = (
@@ -36,7 +36,6 @@ export const mockCheckDeliveryZone = async (
 jest.mock('@services/calculationService', () => ({
     calculateDelivery: jest.fn().mockImplementation(mockCalculateDelivery),
 }))
-
 jest.mock('@services/zoneService', () => ({
     checkDeliveryZone: jest.fn().mockImplementation(mockCheckDeliveryZone),
 }))

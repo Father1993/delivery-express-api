@@ -3,7 +3,6 @@ import cors from 'cors'
 import calculationRoutes from '@routes/calculation'
 import zoneRoutes from '@routes/zone'
 
-// Создание тестового Express-приложения
 export function createTestApp() {
     const app = express()
     app.use(cors())
