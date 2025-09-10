@@ -1,21 +1,11 @@
 import request from 'supertest'
 import { createTestApp } from '../app'
+import { makeAuthRequest, TEST_COORDINATES } from '../helpers'
 import '../setup'
 import '../mocks/services'
 
 describe('API расчета доставки', () => {
     const app = createTestApp()
-
-    // Хелпер для создания запроса с авторизацией
-    const makeAuthRequest = () => {
-        const authString = Buffer.from(`${process.env.API_USERNAME}:${process.env.API_PASSWORD}`).toString(
-            'base64'
-        )
-        return request(app)
-            .post('/api/calculate')
-            .set('Authorization', `Basic ${authString}`)
-            .set('x-api-key', process.env.API_KEY_CS_CART || '')
-    }
 
     test('требует авторизацию', async () => {
         const response = await request(app).post('/api/calculate').send({})
@@ -23,8 +13,8 @@ describe('API расчета доставки', () => {
     })
 
     test('рассчитывает стоимость доставки', async () => {
-        const response = await makeAuthRequest().send({
-            coordinates: { lat: 48.5, lon: 135.1 }, // Координаты в зоне
+        const response = await makeAuthRequest(app, 'calculate').send({
+            coordinates: TEST_COORDINATES.IN_ZONE,
             order: { weight: 5, cost: 1000 },
             zoneInfo: { inZone: true, zoneName: 'Центр Хабаровска' },
         })
@@ -36,8 +26,8 @@ describe('API расчета доставки', () => {
     })
 
     test('отклоняет запрос для адреса вне зоны', async () => {
-        const response = await makeAuthRequest().send({
-            coordinates: { lat: 55.7558, lon: 37.6173 }, // Москва - вне зоны
+        const response = await makeAuthRequest(app, 'calculate').send({
+            coordinates: TEST_COORDINATES.OUT_OF_ZONE,
             order: { weight: 5, cost: 1000 },
             zoneInfo: { inZone: false },
         })

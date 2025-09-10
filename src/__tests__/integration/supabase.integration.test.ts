@@ -1,4 +1,5 @@
 import { checkDeliveryZone } from '@services/zoneService'
+import { TEST_COORDINATES } from '../helpers'
 
 describe('Интеграционные тесты Supabase', () => {
     // Эти тесты запускаются только если установлена переменная RUN_INTEGRATION_TESTS
@@ -9,16 +10,16 @@ describe('Интеграционные тесты Supabase', () => {
     }
 
     test('реальный запрос к Supabase (в зоне)', async () => {
-        // Реальные координаты в зоне доставки Хабаровска
-        const coordinates = { lat: 48.480223, lon: 135.071917 }
+        // Используем стандартные тестовые координаты в зоне
+        const coordinates = TEST_COORDINATES.IN_ZONE
         const result = await checkDeliveryZone(coordinates)
         expect(result.inZone).toBe(true)
         expect(result.zoneName).toBeDefined()
     }, 10000)
 
     test('реальный запрос к Supabase (вне зоны)', async () => {
-        // Координаты заведомо вне зоны доставки (Москва)
-        const coordinates = { lat: 55.7558, lon: 37.6173 }
+        // Используем стандартные тестовые координаты вне зоны
+        const coordinates = TEST_COORDINATES.OUT_OF_ZONE
         const result = await checkDeliveryZone(coordinates)
         expect(result.inZone).toBe(false)
     }, 10000)

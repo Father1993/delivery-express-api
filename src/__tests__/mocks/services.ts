@@ -26,9 +26,20 @@ export const mockCalculateDelivery = (
 export const mockCheckDeliveryZone = async (
     coordinates: Coordinates
 ): Promise<ZoneInfo> => {
-    return {
-        inZone: true,
-        zoneName: 'Тестовая зона',
+    // Используем ту же логику что и в setup.ts для согласованности
+    const isInZone = coordinates.lat >= 48.4 && coordinates.lat <= 48.6 && 
+                    coordinates.lon >= 135.0 && coordinates.lon <= 135.2
+    
+    if (isInZone) {
+        return {
+            inZone: true,
+            zoneName: 'Центр Хабаровска',
+        }
+    } else {
+        return {
+            inZone: false,
+            error: 'Адрес находится вне зоны доставки'
+        }
     }
 }
 
