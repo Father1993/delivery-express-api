@@ -6,11 +6,7 @@ deploy:
   script:
     # Установка SSH-клиента (если ещё не установлен)
     - 'which ssh-agent || ( apt-get update -qq && apt-get install -y openssh-client git )'
-
-    # Запуск агента
     - eval $(ssh-agent -s)
-
-    # Создания .ssh directory
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
 
