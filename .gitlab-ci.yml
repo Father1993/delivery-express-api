@@ -23,8 +23,14 @@ deploy:
     - chmod 700 ~/.ssh
 
     # Добавляем приватный ключ из переменной GitLab
+    - echo "🔍 First 50 chars of SSH_PRIVATE:"
+    - echo "$SSH_PRIVATE" | head -c 50
     - echo "$SSH_PRIVATE" > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
+    - echo "🔍 Key file size:"
+    - ls -la ~/.ssh/id_ed25519
+    - echo "🔍 First line of key file:"
+    - head -1 ~/.ssh/id_ed25519
 
     # Добавляем хост в known_hosts (используем тестовый IP)
     - mkdir -p ~/.ssh
