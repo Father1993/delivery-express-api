@@ -7,14 +7,6 @@ deploy:
     # Установка SSH-клиента (если ещё не установлен)
     - 'which ssh-agent || ( apt-get update -qq && apt-get install -y openssh-client git )'
 
-    # Отладка переменных
-    - echo "🔍 DEBUG - SERVER_IP='$SERVER_IP'"
-    - echo "🔍 DEBUG - SSH_PRIVATE length=${#SSH_PRIVATE}"
-    
-    # Временно прописываем IP для теста (ЗАМЕНИТЕ НА ВАШ IP!)
-    - export TEST_SERVER_IP="89.169.3.229"
-    - echo "🔍 Using test IP=$TEST_SERVER_IP"
-
     # Запуск агента
     - eval $(ssh-agent -s)
 
@@ -23,22 +15,16 @@ deploy:
     - chmod 700 ~/.ssh
 
     # Добавляем приватный ключ из переменной GitLab
-    - echo "🔍 First 50 chars of SSH_PRIVATE:"
-    - echo "$SSH_PRIVATE" | head -c 50
     - echo "$SSH_PRIVATE" > ~/.ssh/id_ed25519
     - chmod 600 ~/.ssh/id_ed25519
-    - echo "🔍 Key file size:"
-    - ls -la ~/.ssh/id_ed25519
-    - echo "🔍 First line of key file:"
-    - head -1 ~/.ssh/id_ed25519
 
-    # Добавляем хост в known_hosts (используем тестовый IP)
+    # Добавляем хост в known_hosts
     - mkdir -p ~/.ssh
-    - ssh-keyscan -H $TEST_SERVER_IP >> ~/.ssh/known_hosts
+    - ssh-keyscan -H $SERVER_IP >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
 
-    # Выполняем команды на сервере (используем тестовый IP)
-    - ssh -v -o StrictHostKeyChecking=yes admin@$TEST_SERVER_IP "
+    # Выполняем команды на сервере
+    - ssh -o StrictHostKeyChecking=yes admin@$SERVER_IP "
         cd /opt/delivery-uroven &&
         echo '🔁 Получаем последние изменения...' &&
         git pull origin main &&
