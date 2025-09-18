@@ -6,6 +6,11 @@ services:
         env_file: .env
         environment:
             - NODE_ENV=production
+            - LOG_DIR=/app/logs
+            - LOG_FILE=app.log
+            - LOG_LEVEL=INFO
+        volumes:
+            - ./logs:/app/logs
         networks:
             - traefik
         labels:

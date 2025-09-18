@@ -16,6 +16,9 @@ COPY . .
 # Сборка TypeScript
 RUN npm run build
 
+# Создание директории для логов
+RUN mkdir -p /app/logs && chmod 777 /app/logs
+
 # Открытие порта
 EXPOSE 3000
 

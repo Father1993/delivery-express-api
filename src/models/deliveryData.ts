@@ -29,6 +29,7 @@ export interface DeliveryOption {
 export interface ZoneInfo {
     inZone: boolean
     zoneName?: string
+    error?: string // Сообщение об ошибке, если адрес вне зоны
 }
 
 // Ответ с расчетом доставки

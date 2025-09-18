@@ -3,14 +3,13 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import calculationRoutes from '@routes/calculation'
 import zoneRoutes from '@routes/zone'
-import { apiProtection } from '@middleware/auth'
+import { logger } from '@utils/logger'
 
 dotenv.config()
 
 const app = express()
 const port = process.env.PORT || 3000
 
-// Middleware
 app.use(cors())
 app.use(express.json())
 
@@ -21,35 +20,28 @@ app.use(
         res: express.Response,
         next: express.NextFunction
     ) => {
-        console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`)
+        logger.info(`${req.method} ${req.url} - IP: ${req.ip}`)
+        
+        // Логируем завершение запроса
+        const startTime = Date.now()
+        res.on('finish', () => {
+            const duration = Date.now() - startTime
+            const logLevel = res.statusCode >= 400 ? 'warn' : 'info'
+            logger[logLevel](
+                `${req.method} ${req.url} - ${res.statusCode} - ${duration}ms`
+            )
+        })
+        
         next()
     }
 )
 
-// Организация API маршрутов
 const apiRouter = express.Router()
-
-// Регистрация маршрутов
 apiRouter.use('/calculate', calculationRoutes)
 apiRouter.use('/zone', zoneRoutes)
 
-// Тестовый маршрут для проверки доступности API
-apiRouter.get(
-    '/health',
-    apiProtection,
-    (req: express.Request, res: express.Response) => {
-        res.json({
-            status: 'ok',
-            message: 'API доступен и защищен',
-            timestamp: new Date().toISOString(),
-        })
-    }
-)
-
-// Подключаем все API маршруты с префиксом /api
 app.use('/api', apiRouter)
 
-// Простой маршрут для проверки работы API
 app.get('/', (req: express.Request, res: express.Response) => {
     res.json({
         status: 'Ok',
@@ -59,8 +51,8 @@ app.get('/', (req: express.Request, res: express.Response) => {
     })
 })
 
-// Обработка 404 ошибок (маршрут не найден)
 app.use((req: express.Request, res: express.Response) => {
+    logger.warn(`Маршрут не найден: ${req.originalUrl}`)
     res.status(404).json({
         error: true,
         message: 'Маршрут не найден',
@@ -68,7 +60,6 @@ app.use((req: express.Request, res: express.Response) => {
     })
 })
 
-// Обработка ошибок
 app.use(
     (
         err: Error,
@@ -76,7 +67,12 @@ app.use(
         res: express.Response,
         next: express.NextFunction
     ) => {
-        console.error('Ошибка сервера:', err.message)
+        logger.error(`Ошибка сервера: ${err.message}`, { 
+            stack: err.stack,
+            url: req.originalUrl,
+            method: req.method
+        })
+        
         res.status(500).json({
             error: true,
             message: 'Внутренняя ошибка сервера',
@@ -84,7 +80,6 @@ app.use(
     }
 )
 
-// Запуск сервера
 app.listen(port, () => {
-    console.log(`Сервер запущен на порту ${port}`)
+    logger.info(`Сервер запущен на порту ${port}`)
 })
