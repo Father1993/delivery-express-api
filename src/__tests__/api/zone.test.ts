@@ -19,6 +19,7 @@ describe('API проверки зоны', () => {
         expect(response.status).toBe(200)
         expect(response.body.inZone).toBe(true)
         expect(response.body.zoneName).toBe('Центр Хабаровска')
+        expect(response.body).toHaveProperty('timestamp')
     })
 
     test('возвращает информацию о зоне (вне зоны)', async () => {
@@ -26,5 +27,17 @@ describe('API проверки зоны', () => {
 
         expect(response.status).toBe(200)
         expect(response.body.inZone).toBe(false)
+        expect(response.body).toHaveProperty('timestamp')
+    })
+
+    test('валидирует координаты', async () => {
+        const response = await makeAuthRequest(app, 'zone').send({
+            lat: 'invalid',
+            lon: 135.1
+        })
+
+        expect(response.status).toBe(400)
+        expect(response.body.error).toBe(true)
+        expect(response.body.message).toContain('корректные координаты')
     })
 })

@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express'
 import { calculateDelivery } from '@services/calculationService'
+import { checkDeliveryZone } from '@services/zoneService'
 import { DeliveryCalculationRequest } from '@models/deliveryData'
 import { apiProtection } from '@middleware/auth'
 import { logger } from '@utils/logger'
@@ -9,15 +10,16 @@ const router = express.Router()
 const validateCalculationRequest = (
     data: any
 ): { isValid: boolean; error?: string } => {
-    if (!data?.lat || !data?.lon || !data?.order || !data?.zoneInfo) {
+    if (!data?.lat || !data?.lon || !data?.order) {
         logger.warn('Неполные данные запроса', { data })
         return {
             isValid: false,
-            error: 'Отсутствуют обязательные поля (lat, lon, order, zoneInfo)',
+            error: 'Отсутствуют обязательные поля (lat, lon, order)',
         }
     }
 
-    if (!data.zoneInfo.inZone) {
+    // Проверяем zoneInfo только если он передан в запросе
+    if (data.zoneInfo && !data.zoneInfo.inZone) {
         logger.warn('Запрос с адресом вне зоны доставки', { lat: data.lat, lon: data.lon })
         return { isValid: false, error: 'Адрес находится вне зоны доставки' }
     }
@@ -74,11 +76,33 @@ const calculateHandler = async (req: Request, res: Response) => {
     }
 
     try {
+        let zoneInfo = data.zoneInfo
+
+        // Если информация о зоне не передана, проверяем автоматически
+        if (!zoneInfo) {
+            logger.debug('Проверяем зону доставки автоматически')
+            zoneInfo = await checkDeliveryZone({ lat: data.lat, lon: data.lon })
+            
+            // Если адрес вне зоны доставки
+            if (!zoneInfo.inZone) {
+                logger.warn('Адрес вне зоны доставки при автоматической проверке', { 
+                    lat: data.lat, 
+                    lon: data.lon,
+                    error: zoneInfo.error 
+                })
+                return res.status(400).json({
+                    error: true,
+                    message: zoneInfo.error || 'Адрес находится вне зоны доставки',
+                    zoneInfo
+                })
+            }
+        }
+
         const result = calculateDelivery(data as DeliveryCalculationRequest)
-        result.zoneInfo = data.zoneInfo
+        result.zoneInfo = zoneInfo
 
         logger.info(
-            `Расчет выполнен успешно: координаты (${data.lat},${data.lon}), зона "${data.zoneInfo.zoneName}", стоимость ${result.delivery_cost} руб.`
+            `Расчет выполнен успешно: координаты (${data.lat},${data.lon}), зона "${zoneInfo.zoneName}", стоимость ${result.delivery_cost} руб.`
         )
 
         return res.json(result)

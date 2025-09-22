@@ -9,13 +9,24 @@ import {
 export const mockCalculateDelivery = (
     data: DeliveryCalculationRequest
 ): DeliveryCalculationResponse => {
+    // Простой расчет для тестов
+    const baseCost = 150
+    const weightCost = data.order.weight * 5
+    const distanceCost = 10 // Фиксированное расстояние для тестов
+    let totalCost = baseCost + weightCost + distanceCost
+
+    // Применяем скидку для дорогих заказов
+    if (data.order.cost > 5000) {
+        totalCost *= 0.9
+    }
+
     return {
-        delivery_cost: 300, // Фиксированная стоимость для тестов
+        delivery_cost: Math.round(totalCost),
         delivery_time: '1-2 дня',
         options: [
             {
                 name: 'Экспресс доставка',
-                cost: 450,
+                cost: Math.round(totalCost * 1.5),
                 description: 'Доставка в течение 3-5 часов',
             },
         ],
@@ -26,7 +37,7 @@ export const mockCalculateDelivery = (
 export const mockCheckDeliveryZone = async (
     coordinates: Coordinates
 ): Promise<ZoneInfo> => {
-    // Используем ту же логику что и в setup.ts для согласованности
+    // Простая логика проверки зоны для тестов
     const isInZone = coordinates.lat >= 48.4 && coordinates.lat <= 48.6 && 
                     coordinates.lon >= 135.0 && coordinates.lon <= 135.2
     

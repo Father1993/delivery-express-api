@@ -16,7 +16,7 @@ export interface DeliveryCalculationRequest {
     lat: number
     lon: number
     order: OrderInfo
-    zoneInfo?: ZoneInfo // Информация о зоне доставки
+    zoneInfo?: ZoneInfo // Информация о зоне доставки (опционально - если не передана, проверяется автоматически)
 }
 
 // Дополнительные опции
