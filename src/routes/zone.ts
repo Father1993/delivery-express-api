@@ -6,16 +6,15 @@ import { logger } from '@utils/logger'
 const router = express.Router()
 
 const checkZoneHandler = async (req: Request, res: Response) => {
-    const coordinates = req.body.coordinates
+    const { lat, lon } = req.body
     
-    logger.info('Получен запрос на проверку зоны доставки', { coordinates })
+    logger.info('Получен запрос на проверку зоны доставки', { lat, lon  })
 
     if (
-        !coordinates ||
-        typeof coordinates.lat !== 'number' ||
-        typeof coordinates.lon !== 'number'
+        typeof lat !== 'number' ||
+        typeof lon !== 'number'
     ) {
-        logger.warn('Некорректные координаты в запросе', { coordinates })
+        logger.warn('Некорректные координаты в запросе', { lat, lon  })
         return res.status(400).json({
             error: true,
             message: 'Необходимо указать корректные координаты (lat, lon)',
@@ -23,7 +22,7 @@ const checkZoneHandler = async (req: Request, res: Response) => {
     }
 
     try {
-        const zoneCheck = await checkDeliveryZone(coordinates)
+        const zoneCheck = await checkDeliveryZone({ lat, lon })
         
         const response = {
             ...zoneCheck,
@@ -33,7 +32,7 @@ const checkZoneHandler = async (req: Request, res: Response) => {
         if (zoneCheck.inZone) {
             logger.info(`Успешная проверка зоны: ${zoneCheck.zoneName}`)
         } else {
-            logger.info('Адрес вне зоны доставки', { coordinates })
+            logger.info('Адрес вне зоны доставки', { lat, lon  })
         }
         
         return res.json(response)
@@ -41,7 +40,7 @@ const checkZoneHandler = async (req: Request, res: Response) => {
         logger.error('Ошибка при проверке зоны доставки', { 
             error: err.message,
             stack: err.stack,
-            coordinates 
+            lat, lon  
         })
         
         return res.status(500).json({

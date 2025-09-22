@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express'
 import { calculateDelivery } from '@services/calculationService'
+import { checkDeliveryZone } from '@services/zoneService'
 import { DeliveryCalculationRequest } from '@models/deliveryData'
 import { apiProtection } from '@middleware/auth'
 import { logger } from '@utils/logger'
@@ -9,20 +10,21 @@ const router = express.Router()
 const validateCalculationRequest = (
     data: any
 ): { isValid: boolean; error?: string } => {
-    if (!data?.coordinates || !data?.order || !data?.zoneInfo) {
+    if (!data?.lat || !data?.lon || !data?.order) {
         logger.warn('Неполные данные запроса', { data })
         return {
             isValid: false,
-            error: 'Отсутствуют обязательные поля (coordinates, order, zoneInfo)',
+            error: 'Отсутствуют обязательные поля (lat, lon, order)',
         }
     }
 
-    if (!data.zoneInfo.inZone) {
-        logger.warn('Запрос с адресом вне зоны доставки', { coordinates: data.coordinates })
+    // Проверяем zoneInfo только если он передан в запросе
+    if (data.zoneInfo && !data.zoneInfo.inZone) {
+        logger.warn('Запрос с адресом вне зоны доставки', { lat: data.lat, lon: data.lon })
         return { isValid: false, error: 'Адрес находится вне зоны доставки' }
     }
 
-    const { lat, lon } = data.coordinates
+    const { lat, lon } = data
     if (typeof lat !== 'number' || lat < -90 || lat > 90) {
         logger.warn('Некорректная широта', { lat })
         return {
@@ -57,7 +59,8 @@ const validateCalculationRequest = (
 const calculateHandler = async (req: Request, res: Response) => {
     const data = req.body
     logger.info('Получен запрос на расчет доставки', { 
-        coordinates: data?.coordinates,
+        lat: data?.lat,
+        lon: data?.lon,
         orderWeight: data?.order?.weight,
         orderCost: data?.order?.cost
     })
@@ -73,11 +76,33 @@ const calculateHandler = async (req: Request, res: Response) => {
     }
 
     try {
+        let zoneInfo = data.zoneInfo
+
+        // Если информация о зоне не передана, проверяем автоматически
+        if (!zoneInfo) {
+            logger.debug('Проверяем зону доставки автоматически')
+            zoneInfo = await checkDeliveryZone({ lat: data.lat, lon: data.lon })
+            
+            // Если адрес вне зоны доставки
+            if (!zoneInfo.inZone) {
+                logger.warn('Адрес вне зоны доставки при автоматической проверке', { 
+                    lat: data.lat, 
+                    lon: data.lon,
+                    error: zoneInfo.error 
+                })
+                return res.status(400).json({
+                    error: true,
+                    message: zoneInfo.error || 'Адрес находится вне зоны доставки',
+                    zoneInfo
+                })
+            }
+        }
+
         const result = calculateDelivery(data as DeliveryCalculationRequest)
-        result.zoneInfo = data.zoneInfo
+        result.zoneInfo = zoneInfo
 
         logger.info(
-            `Расчет выполнен успешно: координаты (${data.coordinates.lat},${data.coordinates.lon}), зона "${data.zoneInfo.zoneName}", стоимость ${result.delivery_cost} руб.`
+            `Расчет выполнен успешно: координаты (${data.lat},${data.lon}), зона "${zoneInfo.zoneName}", стоимость ${result.delivery_cost} руб.`
         )
 
         return res.json(result)
