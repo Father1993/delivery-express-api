@@ -14,7 +14,7 @@ describe('API расчета доставки', () => {
 
     test('рассчитывает стоимость доставки', async () => {
         const response = await makeAuthRequest(app, 'calculate').send({
-            coordinates: TEST_COORDINATES.IN_ZONE,
+            ...TEST_COORDINATES.IN_ZONE,
             order: { weight: 5, cost: 1000 },
             zoneInfo: { inZone: true, zoneName: 'Центр Хабаровска' },
         })
@@ -27,7 +27,7 @@ describe('API расчета доставки', () => {
 
     test('отклоняет запрос для адреса вне зоны', async () => {
         const response = await makeAuthRequest(app, 'calculate').send({
-            coordinates: TEST_COORDINATES.OUT_OF_ZONE,
+            ...TEST_COORDINATES.OUT_OF_ZONE,
             order: { weight: 5, cost: 1000 },
             zoneInfo: { inZone: false },
         })

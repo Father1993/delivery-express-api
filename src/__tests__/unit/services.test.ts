@@ -8,7 +8,7 @@ describe('Сервисы', () => {
     describe('Сервис расчета доставки', () => {
         test('рассчитывает стоимость доставки', () => {
             const request: DeliveryCalculationRequest = {
-                coordinates: TEST_COORDINATES.OUT_OF_ZONE,
+                ...TEST_COORDINATES.OUT_OF_ZONE,
                 order: { weight: 5, cost: 1000 },
                 zoneInfo: { inZone: true, zoneName: 'Тестовая зона' },
             }
@@ -19,12 +19,12 @@ describe('Сервисы', () => {
 
         test('увеличивает стоимость при увеличении веса', () => {
             const request1 = {
-                coordinates: TEST_COORDINATES.OUT_OF_ZONE,
+                ...TEST_COORDINATES.OUT_OF_ZONE,
                 order: { weight: 1, cost: 1000 },
                 zoneInfo: { inZone: true, zoneName: 'Центр' },
             }
             const request2 = {
-                coordinates: TEST_COORDINATES.OUT_OF_ZONE,
+                ...TEST_COORDINATES.OUT_OF_ZONE,
                 order: { weight: 10, cost: 1000 },
                 zoneInfo: { inZone: true, zoneName: 'Центр' },
             }

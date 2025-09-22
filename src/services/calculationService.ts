@@ -37,12 +37,12 @@ const calculateDistance = (
 export const calculateDelivery = (
     data: DeliveryCalculationRequest
 ): DeliveryCalculationResponse => {
-    const { coordinates, order } = data
+    const { lat, lon, order } = data
     
-    logger.debug('Начало расчета доставки', { coordinates, order })
+    logger.debug('Начало расчета доставки', { lat, lon, order })
 
     // Расчет расстояния в километрах (упрощенно)
-    const distanceInKm = calculateDistance(BASE_COORDINATES, coordinates)
+    const distanceInKm = calculateDistance(BASE_COORDINATES, { lat, lon })
     logger.debug(`Расстояние: ${distanceInKm.toFixed(2)} км`)
 
     // Расчет стоимости доставки

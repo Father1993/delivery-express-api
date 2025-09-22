@@ -9,20 +9,20 @@ const router = express.Router()
 const validateCalculationRequest = (
     data: any
 ): { isValid: boolean; error?: string } => {
-    if (!data?.coordinates || !data?.order || !data?.zoneInfo) {
+    if (!data?.lat || !data?.lon || !data?.order || !data?.zoneInfo) {
         logger.warn('Неполные данные запроса', { data })
         return {
             isValid: false,
-            error: 'Отсутствуют обязательные поля (coordinates, order, zoneInfo)',
+            error: 'Отсутствуют обязательные поля (lat, lon, order, zoneInfo)',
         }
     }
 
     if (!data.zoneInfo.inZone) {
-        logger.warn('Запрос с адресом вне зоны доставки', { coordinates: data.coordinates })
+        logger.warn('Запрос с адресом вне зоны доставки', { lat: data.lat, lon: data.lon })
         return { isValid: false, error: 'Адрес находится вне зоны доставки' }
     }
 
-    const { lat, lon } = data.coordinates
+    const { lat, lon } = data
     if (typeof lat !== 'number' || lat < -90 || lat > 90) {
         logger.warn('Некорректная широта', { lat })
         return {
@@ -57,7 +57,8 @@ const validateCalculationRequest = (
 const calculateHandler = async (req: Request, res: Response) => {
     const data = req.body
     logger.info('Получен запрос на расчет доставки', { 
-        coordinates: data?.coordinates,
+        lat: data?.lat,
+        lon: data?.lon,
         orderWeight: data?.order?.weight,
         orderCost: data?.order?.cost
     })
@@ -77,7 +78,7 @@ const calculateHandler = async (req: Request, res: Response) => {
         result.zoneInfo = data.zoneInfo
 
         logger.info(
-            `Расчет выполнен успешно: координаты (${data.coordinates.lat},${data.coordinates.lon}), зона "${data.zoneInfo.zoneName}", стоимость ${result.delivery_cost} руб.`
+            `Расчет выполнен успешно: координаты (${data.lat},${data.lon}), зона "${data.zoneInfo.zoneName}", стоимость ${result.delivery_cost} руб.`
         )
 
         return res.json(result)
