@@ -7,6 +7,7 @@ export interface Coordinates {
 // Информация о заказе
 export interface OrderInfo {
     weight: number // Вес в кг
+    volume?: number // Объем в м³ (опционально для обратной совместимости)
     cost: number // Стоимость заказа в рублях
     items?: number // Количество товаров (опционально)
 }
@@ -37,6 +38,7 @@ export interface ZoneInfo {
 export interface DeliveryCalculationResponse {
     delivery_cost: number // Стоимость доставки в рублях
     delivery_time: string // Примерное время доставки (например, "1-2 дня")
+    express_delivery_cost?: number // Стоимость экспресс доставки
     options?: DeliveryOption[]
     zoneInfo?: ZoneInfo // Информация о зоне доставки
 }

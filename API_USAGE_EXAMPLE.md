@@ -13,8 +13,9 @@ curl -X POST http://localhost:3000/api/calculate \
     "lat": 48.480223,
     "lon": 135.071917,
     "order": {
-      "weight": 2.5,
-      "cost": 3000
+      "weight": 1500,
+      "volume": 7,
+      "cost": 50000
     }
   }'
 ```
@@ -22,13 +23,14 @@ curl -X POST http://localhost:3000/api/calculate \
 **Ответ (успех):**
 ```json
 {
-  "delivery_cost": 300,
+  "delivery_cost": 838,
   "delivery_time": "1-2 дня",
+  "express_delivery_cost": 957,
   "options": [
     {
       "name": "Экспресс доставка",
-      "cost": 450,
-      "description": "Доставка в течение 3-5 часов"
+      "cost": 957,
+      "description": "Приоритетная доставка"
     }
   ],
   "zoneInfo": {
@@ -61,8 +63,9 @@ curl -X POST http://localhost:3000/api/calculate \
     "lat": 48.480223,
     "lon": 135.071917,
     "order": {
-      "weight": 2.5,
-      "cost": 3000
+      "weight": 1500,
+      "volume": 7,
+      "cost": 50000
     },
     "zoneInfo": {
       "inZone": true,
@@ -119,7 +122,7 @@ async function calculateDelivery(coordinates, order) {
 // Использование
 const result = await calculateDelivery(
   { lat: 48.480223, lon: 135.071917 },
-  { weight: 2.5, cost: 3000 }
+  { weight: 1500, volume: 7, cost: 50000 }
 );
 
 if (result.error) {
@@ -128,6 +131,7 @@ if (result.error) {
 } else {
   console.log('Стоимость доставки:', result.delivery_cost);
   console.log('Время доставки:', result.delivery_time);
+  console.log('Экспресс доставка:', result.express_delivery_cost);
 }
 ```
 
