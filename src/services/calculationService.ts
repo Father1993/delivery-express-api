@@ -3,90 +3,66 @@ import {
     DeliveryCalculationResponse,
 } from '@models/deliveryData'
 import { logger } from '@utils/logger'
-
-// Базовые тарифы
-const BASE_DELIVERY_COST = 150 // Базовая стоимость доставки
-const COST_PER_KM = 10 // Стоимость за километр
-const WEIGHT_MULTIPLIER = 5 // Множитель стоимости за кг веса
-
-// Базовые координаты (центр доставки)
-const BASE_COORDINATES = {
-    lat: 48.480223,
-    lon: 135.071917,
-}
+import { DELIVERY_CONFIG } from '@config/deliveryConfig'
 
 /**
- * Простой расчет расстояния между двумя точками (имитация)
- * В реальном проекте здесь может быть более сложная логика
- */
-const calculateDistance = (
-    point1: { lat: number; lon: number },
-    point2: { lat: number; lon: number }
-): number => {
-    // Простая формула для демонстрации
-    const latDiff = Math.abs(point1.lat - point2.lat)
-    const lonDiff = Math.abs(point1.lon - point2.lon)
-
-    // Приблизительное расстояние в км (для демонстрации)
-    return Math.sqrt(latDiff * latDiff + lonDiff * lonDiff) * 100
-}
-
-/**
- * Расчет стоимости доставки на основе координат и данных заказа
+ * Расчет стоимости доставки по формулам Excel
  */
 export const calculateDelivery = (
     data: DeliveryCalculationRequest
 ): DeliveryCalculationResponse => {
-    const { lat, lon, order } = data
+    const { order } = data
+    const config = DELIVERY_CONFIG
     
-    logger.debug('Начало расчета доставки', { lat, lon, order })
+    logger.debug('Начало расчета доставки', { order })
 
-    // Расчет расстояния в километрах (упрощенно)
-    const distanceInKm = calculateDistance(BASE_COORDINATES, { lat, lon })
-    logger.debug(`Расстояние: ${distanceInKm.toFixed(2)} км`)
+    // B2: Реальная доля загрузки = MAX(вес/грузоподъемность, объем/объем кузова)
+    const loadRatio = Math.max(
+        order.weight / config.VEHICLE.CAPACITY_WEIGHT,
+        (order.volume || 0.001) / config.VEHICLE.CAPACITY_VOLUME
+    )
 
-    // Расчет стоимости доставки
-    let deliveryCost = BASE_DELIVERY_COST + distanceInKm * COST_PER_KM
+    // B3: Необходимое количество рейсов (округление вверх)
+    const requiredTrips = Math.ceil(loadRatio)
 
-    // Учет веса заказа
-    deliveryCost += order.weight * WEIGHT_MULTIPLIER
-    logger.debug(`Стоимость после учета веса: ${deliveryCost.toFixed(2)} руб.`)
+    // B4: Количество дополнительных рейсов
+    const additionalTrips = requiredTrips - 1
 
-    // Учет стоимости заказа (например, если заказ дорогой - доставка дешевле)
-    if (order.cost > 5000) {
-        const oldCost = deliveryCost
-        deliveryCost = deliveryCost * 0.9 // Скидка 10% на доставку
-        logger.debug(`Применена скидка 10%: ${oldCost.toFixed(2)} → ${deliveryCost.toFixed(2)} руб.`)
-    }
+    // B5: Реальная доля загрузки с учетом минимума = MAX(B2, минимальный%)
+    const effectiveLoadRatio = Math.max(loadRatio, config.TARIFF.MIN_LOAD_PERCENTAGE / 100)
 
-    // Определение времени доставки в зависимости от расстояния
-    let deliveryTime = '1-2 дня'
-    if (distanceInKm > 10) {
-        deliveryTime = '2-3 дня'
-    }
-    if (distanceInKm > 30) {
-        deliveryTime = '3-5 дней'
-    }
-    logger.debug(`Время доставки: ${deliveryTime}`)
+    // B6: Время работ (погрузка/разгрузка) = время_погрузки * B5
+    const loadingTime = config.TARIFF.LOADING_TIME * effectiveLoadRatio
+
+    // B7: Среднее время доставки по городу = расстояние / скорость
+    const avgDeliveryTime = config.TARIFF.CITY_DISTANCE / config.VEHICLE.AVERAGE_CITY_SPEED
+
+    // B8: Время доставки с учетом % загрузки = B7 * B5
+    const deliveryTime = avgDeliveryTime * effectiveLoadRatio
+
+    // B9: Итоговая себестоимость = (B6 + B8) * ставка + доп_расходы
+    const baseCost = (loadingTime + deliveryTime) * config.TARIFF.HOURLY_RATE + config.TARIFF.ADDITIONAL_COSTS
+
+    // B10: Итоговая стоимость для клиента (с маржой, округление до 100 руб)
+    const clientCost = Math.round(baseCost * (1 + config.TARIFF.MARGIN_PERCENTAGE / 100) / 100) * 100
+
+    // B11: ЭКСПРЕСС доставка себестоимость
+    const expressCostPrice = baseCost * (1 + config.TARIFF.EXPRESS_COEFFICIENT / 100)
+
+    // B12: ЭКСПРЕСС доставка стоимость для клиента (округление до 100 руб)
+    const expressClientCost = Math.round(expressCostPrice * (1 + config.TARIFF.MARGIN_PERCENTAGE / 100) / 100) * 100
+
+    logger.info(`Расчет завершен: обычная - ${clientCost} руб., экспресс - ${expressClientCost} руб.`)
 
     // Формирование ответа
-    const response: DeliveryCalculationResponse = {
-        delivery_cost: Math.round(deliveryCost), // Округляем до целого числа
-        delivery_time: deliveryTime,
+    return {
+        delivery_cost: clientCost,
+        delivery_time: requiredTrips <= 1 ? '1-2 дня' : `${requiredTrips}-${requiredTrips + 1} дня`,
+        express_delivery_cost: expressClientCost,
+        options: [{
+            name: 'Экспресс доставка',
+            cost: expressClientCost,
+            description: 'Приоритетная доставка',
+        }],
     }
-
-    // Добавление опциональных вариантов доставки
-    if (distanceInKm < 20) {
-        response.options = [
-            {
-                name: 'Экспресс доставка',
-                cost: Math.round(deliveryCost * 1.5),
-                description: 'Доставка в течение 3-5 часов',
-            },
-        ]
-        logger.debug('Добавлена опция экспресс-доставки')
-    }
-
-    logger.info(`Расчет доставки завершен: ${response.delivery_cost} руб., ${response.delivery_time}`)
-    return response
 }

@@ -22,6 +22,29 @@ x-api-key: cs-cart-delivery
 | POST  | `/calculate` | Расчет стоимости доставки |
 | GET   | `/health`    | Проверка доступности API  |
 
+## Структура данных
+
+### OrderInfo (данные заказа)
+```typescript
+{
+    weight: number,    // Вес заказа в кг (обязательно)
+    volume?: number,   // Объем заказа в м³ (опционально)
+    cost: number,      // Стоимость заказа в рублях (обязательно)
+    items?: number     // Количество товаров (опционально)
+}
+```
+
+### DeliveryCalculationResponse (ответ расчета)
+```typescript
+{
+    delivery_cost: number,           // Стоимость обычной доставки
+    delivery_time: string,           // Время доставки
+    express_delivery_cost?: number,  // Стоимость экспресс доставки
+    options?: DeliveryOption[],      // Дополнительные опции
+    zoneInfo?: ZoneInfo             // Информация о зоне
+}
+```
+
 ## Порядок использования API
 
 1. Сначала выполните запрос к `/api/zone` для проверки возможности доставки
@@ -67,9 +90,10 @@ POST /api/calculate
         "lon": 135.223427
     },
     "order": {
-        "weight": 5.5,
-        "cost": 3500,
-        "items": 2
+        "weight": 1500,
+        "volume": 7,
+        "cost": 50000,
+        "items": 5
     },
     "zoneInfo": {
         "inZone": true,
@@ -82,13 +106,14 @@ POST /api/calculate
 
 ```json
 {
-    "delivery_cost": 305,
-    "delivery_time": "2-3 дня",
+    "delivery_cost": 838,
+    "delivery_time": "1-2 дня",
+    "express_delivery_cost": 957,
     "options": [
         {
             "name": "Экспресс доставка",
-            "cost": 458,
-            "description": "Доставка в течение 3-5 часов"
+            "cost": 957,
+            "description": "Приоритетная доставка"
         }
     ],
     "zoneInfo": {
